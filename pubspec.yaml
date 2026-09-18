@@ -1,0 +1,33 @@
+name: carbon_copy
+description: Fullscreen camera feed and live print overlay for the Elegoo Centauri Carbon 2, over its LAN-only protocol.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0B1220"
+  adaptive_icon_foreground: "assets/app_icon_foreground.png"
+  remove_alpha_ios: false
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mqtt_client: ^10.9.0
+  flutter_mjpeg: ^2.0.4
+  shared_preferences: ^2.2.3
+  wakelock_plus: ^1.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
