@@ -16,6 +16,10 @@ A sibling project to [`moonraker_viewer`](../moonraker_viewer) — same UI/UX, d
   - Hotend and bed temperatures (with heating indicator)
   - Progress bar, elapsed / remaining time
   - Layer count (`current / total`)
+  - Print phase next to the state (e.g. "PRINTING · AUTO LEVELING", "PREHEATING NOZZLE")
+  - Chamber temperature
+  - Optional fan chips: model, assistance and case fan speed (%)
+- **Canvas overlay** — loaded filament (color, type, name) for each Canvas tray, with the active tray highlighted (toggleable in Settings)
 - **Split-screen dual-printer mode** — two printers side by side; tap a pane to focus it full-screen
 - **Debug log overlay** — last 15 raw messages from the printer, bottom-right corner (toggleable in Settings) — useful for verifying the (reverse-engineered) protocol against your printer
 - Serial number auto-detected via UDP discovery on save
@@ -47,6 +51,8 @@ On first launch the Settings screen opens automatically:
 | Serial number | Auto-detected on save via UDP; fill in manually only if that fails | — |
 | Keep screen on | Prevent the display from sleeping | on |
 | Show debug log overlay | Show last 15 raw printer messages bottom-right | off |
+| Show canvas overlay | Show the loaded filament for each Canvas tray, bottom-left | off |
+| Show fan chips | Show model / assistance / case fan speeds in the bottom bar | off |
 | Enable second printer | Show a second printer side by side | off |
 | Emergency Stop | Show a stop button on the camera view | on |
 
@@ -62,12 +68,12 @@ Same as `moonraker_viewer`: tap to toggle overlay/focus pane, pinch to zoom, dou
 
 ## Protocol
 
-MQTT 3.1.1 — the printer itself is the broker (port `1883`), authenticated as `elegoo` / `<access code>`. Reconstructed from reverse-engineered community documentation, **not an official Elegoo spec** — see `CLAUDE.md` for details and known unknowns. If a status looks wrong on your printer, turn on the debug log overlay and compare against what `CentauriService` expects.
+MQTT 3.1.1 — the printer itself is the broker (port `1883`), authenticated as `elegoo` / `<access code>`. Reconstructed from reverse-engineered community documentation, **not an official Elegoo spec** — see `CLAUDE.md` for details and known unknowns. Status/sub-status code names and method numbers come from the [elegoo-web](https://github.com/runnane/elegoo-web) project ([`types.ts`](https://github.com/runnane/elegoo-web/blob/main/src/types.ts), [`printer-state.ts`](https://github.com/runnane/elegoo-web/blob/main/src/printer-state.ts)). If a status looks wrong on your printer, turn on the debug log overlay and compare against what `CentauriService` expects.
 
 ---
 
 ## Known limitations
 
-- No print thumbnail (the thumbnail request/response shape wasn't documented confidently enough to implement safely in v1).
-- `machine_status`/`sub_status` → UI state mapping is best-effort; please report any state that displays incorrectly on your printer.
-- This has **not been tested against a physical Centauri Carbon 2** — it was built entirely from third-party protocol documentation. Please verify on your printer and expect to file (or fix) small protocol-mapping issues on first run.
+- Tested against a physical Centauri Carbon 2 (with a Canvas, OTA firmware `02.01.00.00`), but the protocol is still community-documented rather than an official Elegoo spec, so other firmware versions may report things differently.
+- No print thumbnail — the thumbnail request/response (method `1045`) isn't implemented yet.
+- Print state comes from the printer's `print_status.state` / `machine_status.status`; the phase label (e.g. "Auto Leveling") uses the community-published `sub_status` table. Codes missing from that table show as "Preparing" until the first layer. Please report any state or phase that displays incorrectly on your printer.

@@ -1,5 +1,6 @@
 /// Sub-status code names, taken from the elegoo-web project's table of the
-/// official app's enum (github.com/runnane/elegoo-web, src/types.ts).
+/// official app's enum:
+/// https://github.com/runnane/elegoo-web/blob/main/src/types.ts
 const Map<int, String> subStatusNames = {
   1041: 'Environment Too Cold',
   1045: 'Preheating Nozzle',

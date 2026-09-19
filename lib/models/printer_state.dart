@@ -67,7 +67,8 @@ class PrinterState {
   /// Builds state from the merged CC2 status map (see [CentauriService]).
   /// Status-code mapping is reconstructed from reverse-engineered community
   /// docs, not an official spec — verify against the debug overlay if a
-  /// printer state ever looks wrong.
+  /// printer state ever looks wrong. Code tables:
+  /// https://github.com/runnane/elegoo-web/blob/main/src/types.ts
   factory PrinterState.fromCentauri(Map<String, dynamic> status) {
     Map<String, dynamic> sub(String k) =>
         (status[k] as Map?)?.cast<String, dynamic>() ?? const {};

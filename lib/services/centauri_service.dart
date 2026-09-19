@@ -10,7 +10,9 @@ import '../models/printer_state.dart';
 /// 3.1.1, with the printer itself acting as the broker on port 1883.
 ///
 /// Reconstructed from reverse-engineered community docs (no official spec),
-/// so message shapes are matched defensively. Every raw payload is also
+/// so message shapes are matched defensively. Method numbers (1001/1002 status,
+/// 2005 canvas, 1045 thumbnail, ...) and delta-merge behaviour follow
+/// https://github.com/runnane/elegoo-web/blob/main/src/printer-state.ts Every raw payload is also
 /// pushed onto [consoleStream] as a debug log so mismatches are visible.
 class CentauriService {
   final String host;
