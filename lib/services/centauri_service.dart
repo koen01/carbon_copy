@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import '../models/canvas_info.dart';
 import '../models/printer_state.dart';
 
 /// Talks to an Elegoo Centauri Carbon 2 over its LAN-only protocol: MQTT
@@ -30,11 +31,13 @@ class CentauriService {
   final _stateController = StreamController<PrinterState>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
   final _consoleController = StreamController<String>.broadcast();
+  final _canvasController = StreamController<CanvasInfo?>.broadcast();
   final Map<String, dynamic> _accumulated = {};
 
   Stream<PrinterState> get stateStream => _stateController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
   Stream<String> get consoleStream => _consoleController.stream;
+  Stream<CanvasInfo?> get canvasStream => _canvasController.stream;
 
   CentauriService({
     required this.host,
@@ -110,6 +113,7 @@ class CentauriService {
 
     _publish({'id': _msgId++, 'method': 1001, 'params': {}}); // attributes
     _publish({'id': _msgId++, 'method': 1002, 'params': {}}); // full status
+    _publish({'id': _msgId++, 'method': 2005, 'params': {}}); // canvas info
     _publish({
       'id': _msgId++,
       'method': 1042,
@@ -124,7 +128,10 @@ class CentauriService {
     _statusRefreshTimer?.cancel();
     _statusRefreshTimer = Timer.periodic(
       const Duration(seconds: 20),
-      (_) => _publish({'id': _msgId++, 'method': 1002, 'params': {}}),
+      (_) {
+        _publish({'id': _msgId++, 'method': 1002, 'params': {}});
+        _publish({'id': _msgId++, 'method': 2005, 'params': {}});
+      },
     );
   }
 
@@ -170,6 +177,12 @@ class CentauriService {
           continue;
         }
 
+        final canvas = _extractCanvas(map);
+        if (canvas != null) {
+          _canvasController.add(CanvasInfo.fromJson(canvas));
+          continue;
+        }
+
         final payload = _extractStatusPayload(map);
         if (payload != null) {
           _merge(payload);
@@ -179,6 +192,15 @@ class CentauriService {
         // ignore malformed payloads
       }
     }
+  }
+
+  Map<String, dynamic>? _extractCanvas(Map<String, dynamic> data) {
+    for (final candidate in [data, data['result'], data['data']]) {
+      if (candidate is Map && candidate['canvas_info'] is Map) {
+        return (candidate['canvas_info'] as Map).cast<String, dynamic>();
+      }
+    }
+    return null;
   }
 
   Map<String, dynamic>? _extractStatusPayload(Map<String, dynamic> data) {
@@ -258,6 +280,7 @@ class CentauriService {
     _cancelTimers();
     _client?.disconnect();
     _stateController.close();
+    _canvasController.close();
     _connectionController.close();
     _consoleController.close();
   }

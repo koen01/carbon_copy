@@ -51,6 +51,7 @@ lib/
 **Key implementation notes:**
 
 - **The CC2 protocol here is reverse-engineered from community docs (elegoo-web, elegoo-homeassistant's `CC2_PROTOCOL.md`, Centauri-Dashboard), not an official spec.** In particular, the exact `machine_status`/`sub_status` → UI-state code table (`PrinterState._mapState`) and the thumbnail response shape are best-effort. If a status looks wrong against a real printer, turn on the debug-log overlay (Settings → "Show debug log overlay") and compare the raw payloads against `CentauriService._extractStatusPayload` / `PrinterState.fromCentauri`.
+- **Canvas (multi-color) overlay**: `CentauriService` requests method `2005` on connect and every 20s and exposes `canvasStream` (`CanvasInfo` in `models/canvas_info.dart`, tray list with type/name/color/loaded, active tray). Verified against a real printer. Rendered by `widgets/canvas_overlay.dart` bottom-left in single-pane view only, gated by the `show_canvas` setting. Chamber temp comes from `ztemperature_sensor.temperature`.
 - No print thumbnail in this fork (v1) — the thumbnail request/response shape (method `1045`) wasn't confidently documented enough to implement without likely breaking silently. `InfoOverlay` already renders a placeholder icon when `thumbnailUrl` is null.
 - No state management library — plain Dart streams + `setState`, mirroring `moonraker_viewer`.
 - Auto-reconnect: 3-second retry loop on MQTT disconnect, same shape as `MoonrakerService` in the sibling project.
@@ -62,4 +63,4 @@ lib/
 - **E-Stop button**: sends `STOP_PRINT` (method `1022`) over MQTT rather than an HTTP emergency-stop call — CC2's LAN protocol has no lower-level hardware e-stop endpoint in the documented command set, so this is "stop the current print immediately", same panic-button intent as the original.
 - Ports are fixed by the printer's firmware, unlike Moonraker's configurable port: MQTT `1883`, camera `8080`, UDP discovery `52700`. Settings has no port field.
 - Cleartext HTTP/TCP is required for LAN printer connections — `android:usesCleartextTraffic="true"` on Android; iOS raw sockets aren't subject to ATS, but `NSLocalNetworkUsageDescription` is set in `Info.plist` since iOS 14+ prompts for local-network access.
-- SharedPreferences keys: `printer_host`, `printer_access_code`, `printer_sn`, `keep_screen_on`, `show_debug_log`, `second_printer_enabled`, `printer_host_2`, `printer_access_code_2`, `printer_sn_2`, `estop_enabled`, `estop_hold_ms`, `onboarding_seen`.
+- SharedPreferences keys: `printer_host`, `printer_access_code`, `printer_sn`, `keep_screen_on`, `show_debug_log`, `show_canvas`, `show_fans`, `second_printer_enabled`, `printer_host_2`, `printer_access_code_2`, `printer_sn_2`, `estop_enabled`, `estop_hold_ms`, `onboarding_seen`.

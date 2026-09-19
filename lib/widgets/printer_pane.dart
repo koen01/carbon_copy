@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import '../models/canvas_info.dart';
 import '../models/printer_state.dart';
 import '../services/centauri_service.dart';
+import 'canvas_overlay.dart';
 import 'estop_button.dart';
 import 'info_overlay.dart';
 
@@ -12,6 +14,8 @@ class PrinterPane extends StatefulWidget {
   final bool compact;
   final bool showOverlay;
   final bool showConsole;
+  final bool showCanvas;
+  final bool showFans;
   final bool eStopEnabled;
   final int eStopHoldMs;
   final VoidCallback onSettings;
@@ -28,6 +32,8 @@ class PrinterPane extends StatefulWidget {
     required this.compact,
     required this.showOverlay,
     required this.showConsole,
+    this.showCanvas = false,
+    this.showFans = false,
     this.eStopEnabled = true,
     this.eStopHoldMs = 1500,
     required this.onSettings,
@@ -44,6 +50,7 @@ class PrinterPane extends StatefulWidget {
 class _PrinterPaneState extends State<PrinterPane> with WidgetsBindingObserver {
   CentauriService? _service;
   PrinterState _state = PrinterState.idle();
+  CanvasInfo? _canvas;
   bool _connected = false;
   final List<String> _consoleLines = [];
   final TransformationController _transform = TransformationController();
@@ -80,7 +87,10 @@ class _PrinterPaneState extends State<PrinterPane> with WidgetsBindingObserver {
     if (old.host != widget.host ||
         old.accessCode != widget.accessCode ||
         old.serialNumber != widget.serialNumber) {
-      setState(() => _consoleLines.clear());
+      setState(() {
+        _consoleLines.clear();
+        _canvas = null;
+      });
       _transform.value = Matrix4.identity();
       _connect();
     }
@@ -107,6 +117,10 @@ class _PrinterPaneState extends State<PrinterPane> with WidgetsBindingObserver {
         _connected = c;
         if (c) _feedEpoch++;
       });
+    });
+    svc.canvasStream.listen((c) {
+      if (!mounted) return;
+      setState(() => _canvas = c);
     });
     svc.consoleStream.listen((line) {
       if (!mounted) return;
@@ -203,9 +217,20 @@ class _PrinterPaneState extends State<PrinterPane> with WidgetsBindingObserver {
               onSettings: widget.onSettings,
               settingsFocusNode: widget.settingsFocusNode,
               consoleLines: widget.showConsole ? _consoleLines : null,
+              showFans: widget.showFans,
               onEStopArmed: widget.eStopEnabled ? _handleEStopArmed : null,
               eStopHoldMs: widget.eStopHoldMs,
               onBackToSplit: widget.onBackToSplit,
+            ),
+          if (widget.showOverlay && widget.showCanvas && _canvas != null)
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12, bottom: 110),
+                  child: CanvasOverlay(canvas: _canvas!),
+                ),
+              ),
             ),
         ],
       ),

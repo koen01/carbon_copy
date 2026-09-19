@@ -28,6 +28,8 @@ class _ViewerScreenState extends State<ViewerScreen> {
   // UI state
   bool _showOverlay = true;
   bool _showDebugLog = false;
+  bool _showCanvas = false;
+  bool _showFans = false;
   bool _eStopEnabled = true;
   int _eStopHoldMs = 1500;
   bool _showWalkthrough = false;
@@ -64,6 +66,8 @@ class _ViewerScreenState extends State<ViewerScreen> {
       _accessCode = prefs.getString('printer_access_code') ?? '';
       _sn = prefs.getString('printer_sn') ?? '';
       _showDebugLog = prefs.getBool('show_debug_log') ?? false;
+      _showCanvas = prefs.getBool('show_canvas') ?? false;
+      _showFans = prefs.getBool('show_fans') ?? false;
       _secondPrinterEnabled = prefs.getBool('second_printer_enabled') ?? false;
       _host2 = prefs.getString('printer_host_2');
       _accessCode2 = prefs.getString('printer_access_code_2') ?? '';
@@ -95,6 +99,8 @@ class _ViewerScreenState extends State<ViewerScreen> {
         _accessCode = prefs.getString('printer_access_code') ?? '';
         _sn = prefs.getString('printer_sn') ?? '';
         _showDebugLog = prefs.getBool('show_debug_log') ?? false;
+        _showCanvas = prefs.getBool('show_canvas') ?? false;
+        _showFans = prefs.getBool('show_fans') ?? false;
         _secondPrinterEnabled =
             prefs.getBool('second_printer_enabled') ?? false;
         _host2 = prefs.getString('printer_host_2');
@@ -253,6 +259,8 @@ class _ViewerScreenState extends State<ViewerScreen> {
       compact: false,
       showOverlay: _showOverlay,
       showConsole: _showDebugLog,
+      showCanvas: _showCanvas,
+      showFans: _showFans,
       eStopEnabled: _eStopEnabled,
       eStopHoldMs: _eStopHoldMs,
       onSettings: _openSettings,

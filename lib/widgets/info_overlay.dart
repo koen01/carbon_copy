@@ -11,6 +11,7 @@ class InfoOverlay extends StatelessWidget {
   final FocusNode? settingsFocusNode;
   final List<String>? consoleLines;
   final bool compact;
+  final bool showFans;
   final VoidCallback? onEStopArmed;
   final int eStopHoldMs;
   final VoidCallback? onBackToSplit;
@@ -24,6 +25,7 @@ class InfoOverlay extends StatelessWidget {
     this.settingsFocusNode,
     this.consoleLines,
     this.compact = false,
+    this.showFans = false,
     this.onEStopArmed,
     this.eStopHoldMs = 1500,
     this.onBackToSplit,
@@ -193,10 +195,16 @@ class InfoOverlay extends StatelessWidget {
           if (consoleLines != null && consoleLines!.isNotEmpty)
             Positioned(
               right: 12,
-              // Clear the e-stop button (bottom: 90, height: 56) when present
+              // Clear the top bar (settings cog) above and the e-stop
+              // button (bottom: 90, height: 56) below when present.
+              top: 64,
               bottom: onEStopArmed != null ? 156 : 110,
-              width: 320,
-              child: _ConsoleBox(lines: consoleLines!),
+              width:
+                  (MediaQuery.sizeOf(context).width * 0.55).clamp(320.0, 720.0),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: _ConsoleBox(lines: consoleLines!),
+              ),
             ),
 
           // ── Bottom bar ───────────────────────────────────────────
@@ -236,6 +244,17 @@ class InfoOverlay extends StatelessWidget {
                           'Chamber',
                           '${state.chamberTemp!.toStringAsFixed(0)}°C',
                         ),
+                      if (showFans) ...[
+                        if (state.modelFanPct != null)
+                          _chip(Icons.air, 'Model',
+                              '${state.modelFanPct!.round()}%'),
+                        if (state.auxFanPct != null)
+                          _chip(Icons.air, 'Assist',
+                              '${state.auxFanPct!.round()}%'),
+                        if (state.caseFanPct != null)
+                          _chip(Icons.air, 'Case',
+                              '${state.caseFanPct!.round()}%'),
+                      ],
                       _chip(
                           Icons.timer_outlined, 'Elapsed', state.formatElapsed),
                       _chip(Icons.hourglass_bottom, 'Remaining',
@@ -463,10 +482,23 @@ class _ConsoleBox extends StatelessWidget {
   final List<String> lines;
   const _ConsoleBox({required this.lines});
 
+  static const _lineHeight = 14.0;
+  static const _vPad = 6.0;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final maxLines = ((constraints.maxHeight - 2 * _vPad) / _lineHeight)
+          .floor()
+          .clamp(1, lines.length);
+      final visible = lines.sublist(lines.length - maxLines);
+      return _box(visible);
+    });
+  }
+
+  Widget _box(List<String> lines) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: _vPad),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(6),

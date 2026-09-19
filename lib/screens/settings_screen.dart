@@ -25,6 +25,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _snFocus = FocusNode();
   final _keepScreenOnFocus = FocusNode();
   final _showDebugLogFocus = FocusNode();
+  final _showCanvasFocus = FocusNode();
+  final _showFansFocus = FocusNode();
   final _secondPrinterFocus = FocusNode();
   final _host2Focus = FocusNode();
   final _accessCode2Focus = FocusNode();
@@ -37,6 +39,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _saving = false;
   bool _keepScreenOn = true;
   bool _showDebugLog = false;
+  bool _showCanvas = false;
+  bool _showFans = false;
   bool _secondPrinterEnabled = false;
   bool _eStopEnabled = true;
   int _eStopHoldMs = 1500;
@@ -51,6 +55,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _snFocus,
         _keepScreenOnFocus,
         _showDebugLogFocus,
+        _showCanvasFocus,
+        _showFansFocus,
         _secondPrinterFocus,
         if (_secondPrinterEnabled) ...[
           _host2Focus,
@@ -146,6 +152,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onSelect: () => setState(() => _keepScreenOn = !_keepScreenOn));
     nav(_showDebugLogFocus,
         onSelect: () => setState(() => _showDebugLog = !_showDebugLog));
+    nav(_showCanvasFocus,
+        onSelect: () => setState(() => _showCanvas = !_showCanvas));
+    nav(_showFansFocus, onSelect: () => setState(() => _showFans = !_showFans));
     nav(_secondPrinterFocus,
         onSelect: () =>
             setState(() => _secondPrinterEnabled = !_secondPrinterEnabled));
@@ -193,6 +202,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _keepScreenOn = prefs.getBool('keep_screen_on') ?? true;
       _showDebugLog = prefs.getBool('show_debug_log') ?? false;
+      _showCanvas = prefs.getBool('show_canvas') ?? false;
+      _showFans = prefs.getBool('show_fans') ?? false;
       _secondPrinterEnabled = prefs.getBool('second_printer_enabled') ?? false;
       _eStopEnabled = prefs.getBool('estop_enabled') ?? true;
       _eStopHoldMs = prefs.getInt('estop_hold_ms') ?? 1500;
@@ -224,6 +235,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setString('printer_sn', sn);
     await prefs.setBool('keep_screen_on', _keepScreenOn);
     await prefs.setBool('show_debug_log', _showDebugLog);
+    await prefs.setBool('show_canvas', _showCanvas);
+    await prefs.setBool('show_fans', _showFans);
     await prefs.setBool('second_printer_enabled', _secondPrinterEnabled);
     await prefs.setString('printer_host_2', host2);
     await prefs.setString(
@@ -262,6 +275,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _snFocus.dispose();
     _keepScreenOnFocus.dispose();
     _showDebugLogFocus.dispose();
+    _showCanvasFocus.dispose();
+    _showFansFocus.dispose();
     _secondPrinterFocus.dispose();
     _host2Focus.dispose();
     _accessCode2Focus.dispose();
@@ -394,6 +409,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               fontSize: 16, fontWeight: FontWeight.bold)),
                       subtitle: const Text(
                         'Show the last 15 raw messages from the printer in the bottom-right corner.',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    SwitchListTile(
+                      focusNode: _showCanvasFocus,
+                      value: _showCanvas,
+                      onChanged: (v) => setState(() => _showCanvas = v),
+                      title: const Text('Show canvas overlay',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      subtitle: const Text(
+                        'Show the loaded filament (color, type) for each canvas tray in the bottom-left corner.',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    SwitchListTile(
+                      focusNode: _showFansFocus,
+                      value: _showFans,
+                      onChanged: (v) => setState(() => _showFans = v),
+                      title: const Text('Show fan chips',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      subtitle: const Text(
+                        'Show model, assistance and case fan speeds (%) in the bottom bar.',
                         style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                       contentPadding: EdgeInsets.zero,

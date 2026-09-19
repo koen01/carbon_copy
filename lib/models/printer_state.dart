@@ -12,6 +12,10 @@ class PrinterState {
   final double bedTarget;
   final double bedPower;
   final double? chamberTemp;
+  // Fan speeds as 0-100 percent; null when the printer didn't report them.
+  final double? modelFanPct;
+  final double? auxFanPct;
+  final double? caseFanPct;
   final String? message;
   final double speed; // mm/s
   final double speedFactor; // multiplier (1.0 = 100%)
@@ -33,6 +37,9 @@ class PrinterState {
     required this.bedTarget,
     this.bedPower = 0.0,
     this.chamberTemp,
+    this.modelFanPct,
+    this.auxFanPct,
+    this.caseFanPct,
     this.message,
     this.speed = 0.0,
     this.speedFactor = 1.0,
@@ -65,6 +72,13 @@ class PrinterState {
     final heaterBed = sub('heater_bed');
     final machineStatus = sub('machine_status');
     final chamber = sub('ztemperature_sensor');
+    final fans = sub('fans');
+
+    // Fan speeds are reported on a 0-255 scale.
+    double? fanPct(String key) {
+      final speed = ((fans[key] as Map?)?['speed'] as num?)?.toDouble();
+      return speed == null ? null : (speed / 255 * 100).clamp(0.0, 100.0);
+    }
 
     final subStatus = (status['sub_status'] as num?)?.toInt() ??
         (machineStatus['sub_status'] as num?)?.toInt();
@@ -78,8 +92,15 @@ class PrinterState {
     final remainingSec =
         (printStatus['remaining_time_sec'] as num?)?.toDouble();
 
+    // machine_status.progress (0-100) is what the printer's own screen shows;
+    // total_duration is not the estimated total, so it only serves as a
+    // fallback.
+    final reportedProgress = (machineStatus['progress'] as num?)?.toDouble();
+
     double progress = 0.0;
-    if (totalDuration > 0) {
+    if (reportedProgress != null) {
+      progress = reportedProgress / 100;
+    } else if (totalDuration > 0) {
       progress = printDuration / totalDuration;
     } else if (currentLayer != null && totalLayer != null && totalLayer > 0) {
       progress = currentLayer / totalLayer;
@@ -100,7 +121,12 @@ class PrinterState {
     final bedTarget = (heaterBed['target'] as num?)?.toDouble() ?? 0.0;
 
     return PrinterState(
-      state: _mapState(subStatus, progress),
+      state: _mapState(
+        printState: (printStatus['state'] as String?) ?? '',
+        machineState: (machineStatus['status'] as num?)?.toInt(),
+        subStatus: subStatus,
+        progress: progress,
+      ),
       filename: (printStatus['filename'] as String?)?.isEmpty == true
           ? null
           : printStatus['filename'] as String?,
@@ -115,15 +141,42 @@ class PrinterState {
       bedTarget: bedTarget,
       bedPower: bedTarget > 0 ? 1.0 : 0.0,
       chamberTemp: (chamber['temperature'] as num?)?.toDouble(),
+      modelFanPct: fanPct('fan'),
+      auxFanPct: fanPct('aux_fan'),
+      caseFanPct: fanPct('box_fan'),
       currentLayer: currentLayer,
       totalLayer: totalLayer,
     );
   }
 
-  // sub_status codes per reverse-engineered CC2 docs (elegoo-web,
-  // elegoo-homeassistant CC2_PROTOCOL.md). Anything unrecognized falls back
-  // to 'standby'/'unknown' rather than guessing.
-  static String _mapState(int? subStatus, double progress) {
+  // Prefers print_status.state (a plain string) and machine_status.status
+  // (2 = printing) over the sub_status code table, which is incomplete: an
+  // unknown sub_status used to make an active print show as 'standby'.
+  static String _mapState({
+    required String printState,
+    required int? machineState,
+    required int? subStatus,
+    required double progress,
+  }) {
+    switch (printState.toLowerCase()) {
+      case 'printing':
+        return 'printing';
+      case 'paused':
+      case 'pausing':
+        return 'paused';
+      case 'stopped':
+      case 'stopping':
+      case 'cancelled':
+      case 'canceled':
+        return 'cancelled';
+      case 'complete':
+      case 'completed':
+      case 'finished':
+        return 'complete';
+      case 'error':
+        return 'error';
+    }
+    if (machineState == 2) return 'printing';
     switch (subStatus) {
       case 1045: // preheating
       case 2075: // printing
