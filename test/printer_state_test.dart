@@ -17,6 +17,7 @@ Map<String, dynamic> _printing(
     };
 
 void main() {
+  phaseTests();
   test('printing with the known sub_status', () {
     final s = PrinterState.fromCentauri(_printing());
     expect(s.state, 'printing');
@@ -37,5 +38,21 @@ void main() {
       'print_status': {'state': ''},
     });
     expect(s.state, 'standby');
+  });
+}
+
+void phaseTests() {
+  test('phase label', () {
+    String? phase(int sub, {int layer = 0}) => PrinterState.fromCentauri({
+          'machine_status': {'progress': 0, 'status': 2, 'sub_status': sub},
+          'print_status': {'state': 'printing', 'current_layer': layer},
+        }).phase;
+    expect(phase(2901), 'Auto Leveling');
+    expect(phase(1045), 'Preheating Nozzle');
+    expect(phase(1405), 'Preheating Bed');
+    expect(phase(2802), 'Homing Done');
+    expect(phase(2075, layer: 5), isNull);
+    expect(phase(9999), 'Preparing');
+    expect(phase(9999, layer: 3), isNull);
   });
 }

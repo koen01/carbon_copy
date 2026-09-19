@@ -1,5 +1,9 @@
+import 'sub_status.dart';
+
 class PrinterState {
   final String state;
+  // Sub-phase of an active print (e.g. 'Auto Leveling'); null when just printing.
+  final String? phase;
   final String? filename;
   final double progress;
   final double printDuration;
@@ -25,6 +29,7 @@ class PrinterState {
 
   PrinterState({
     required this.state,
+    this.phase,
     this.filename,
     required this.progress,
     required this.printDuration,
@@ -130,6 +135,7 @@ class PrinterState {
       filename: (printStatus['filename'] as String?)?.isEmpty == true
           ? null
           : printStatus['filename'] as String?,
+      phase: _phaseLabel(subStatus, currentLayer),
       progress: progress,
       printDuration: printDuration,
       totalDuration: totalDuration,
@@ -178,16 +184,46 @@ class PrinterState {
     }
     if (machineState == 2) return 'printing';
     switch (subStatus) {
-      case 1045: // preheating
+      case 1045: // preheating nozzle
+      case 1405: // preheating bed
       case 2075: // printing
+      case 2401: // resuming
+      case 2402:
+      case 2801: // homing
+      case 2802:
+      case 2901: // auto leveling
+      case 2902:
         return 'printing';
+      case 2501: // pausing
       case 2502:
         return 'paused';
+      case 2503: // stopping
       case 2504:
         return 'cancelled';
+      case 2077:
+        return 'complete';
     }
     if (subStatus != null && progress >= 0.999) return 'complete';
     return 'standby';
+  }
+
+  // Codes whose name would only repeat the main state text.
+  static const _silentSubStatuses = {0, 2075, 2077, 2501, 2502, 2503, 2504};
+
+  static String? _phaseLabel(int? subStatus, int? currentLayer) {
+    if (subStatus == null || _silentSubStatuses.contains(subStatus)) {
+      return null;
+    }
+    final name = subStatusNames[subStatus];
+    if (name != null) return name;
+    return (currentLayer ?? 0) == 0 ? 'Preparing' : null;
+  }
+
+  String get displayState {
+    final p = phase;
+    return ((state == 'printing' || state == 'paused') && p != null)
+        ? '${state.toUpperCase()} · ${p.toUpperCase()}'
+        : state.toUpperCase();
   }
 
   String get formatElapsed => _fmt(printDuration);

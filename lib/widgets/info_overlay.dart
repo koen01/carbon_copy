@@ -107,7 +107,7 @@ class InfoOverlay extends StatelessWidget {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              state.state.toUpperCase(),
+                              state.displayState,
                               style: TextStyle(
                                 color: _stateColor(),
                                 fontWeight: FontWeight.bold,
@@ -326,7 +326,7 @@ class InfoOverlay extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  state.state.toUpperCase(),
+                  state.displayState,
                   style: TextStyle(
                     color: _stateColor(),
                     fontWeight: FontWeight.bold,
