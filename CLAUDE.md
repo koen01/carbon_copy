@@ -14,9 +14,13 @@ flutter run               # run on connected device/emulator
 flutter build apk        # build Android APK
 flutter build ios        # build iOS
 flutter test             # run tests
+flutter test test/widget_test.dart --plain-name "<test name>"   # run a single test
 dart format .            # format Dart code
 flutter analyze          # lint
+dart run flutter_launcher_icons   # regenerate Android icons from assets/app_icon*.png (config in pubspec.yaml)
 ```
+
+Only `test/widget_test.dart` exists; there are no tests for the MQTT service or state parsing. Lints come from `flutter_lints` with no custom rules.
 
 ## Architecture
 

@@ -64,6 +64,7 @@ class PrinterState {
     final extruder = sub('extruder');
     final heaterBed = sub('heater_bed');
     final machineStatus = sub('machine_status');
+    final chamber = sub('ztemperature_sensor');
 
     final subStatus = (status['sub_status'] as num?)?.toInt() ??
         (machineStatus['sub_status'] as num?)?.toInt();
@@ -113,6 +114,7 @@ class PrinterState {
       bedTemp: (heaterBed['temperature'] as num?)?.toDouble() ?? 0.0,
       bedTarget: bedTarget,
       bedPower: bedTarget > 0 ? 1.0 : 0.0,
+      chamberTemp: (chamber['temperature'] as num?)?.toDouble(),
       currentLayer: currentLayer,
       totalLayer: totalLayer,
     );

@@ -52,6 +52,7 @@ class CentauriService {
     'print_status',
     'extruder',
     'heater_bed',
+    'ztemperature_sensor',
     'sub_status',
     'fans',
     'gcode_move_inf',

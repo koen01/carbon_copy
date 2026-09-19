@@ -54,9 +54,12 @@ class DiscoveryService {
       final v = data[key];
       if (v is String && v.isNotEmpty) return v;
     }
-    final nested = data['data'];
-    if (nested is Map) {
-      return _findSerial(nested.cast<String, dynamic>());
+    for (final key in const ['result', 'data']) {
+      final nested = data[key];
+      if (nested is Map) {
+        final sn = _findSerial(nested.cast<String, dynamic>());
+        if (sn != null) return sn;
+      }
     }
     return null;
   }
