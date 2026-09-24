@@ -1,0 +1,62 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Decode signing key
+        run: |
+          echo "${{ secrets.CI_KEYSTORE_BASE64 }}" | base64 -d > ci-sideload.jks
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.CI_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.CI_KEY_PASSWORD }}
+          keyAlias=${{ secrets.CI_KEY_ALIAS }}
+          storeFile=${{ github.workspace }}/ci-sideload.jks
+          EOF
+
+      - run: flutter pub get
+
+      - run: flutter build apk --release
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release-out
+          cp build/app/outputs/flutter-apk/app-release.apk release-out/carbon-copy-phone.apk
+          cp build/app/outputs/flutter-apk/app-release.apk release-out/carbon-copy-tv.apk
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-out/carbon-copy-phone.apk
+            release-out/carbon-copy-tv.apk
+          generate_release_notes: true
+          body: |
+            Sideload build — signed with a dedicated CI key, separate from the Google Play release.
+            Installing this over a Play Store install (or vice versa) will fail with a signature
+            mismatch; uninstall the other one first if you need to switch.
+
+            **Install via adb:**
+            ```sh
+            adb install carbon-copy-phone.apk   # phone/tablet
+            adb install carbon-copy-tv.apk       # Android TV / Google TV
+            ```
